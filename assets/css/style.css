@@ -373,3 +373,12 @@ h1 {
 
     transition: 0.4s ease;
 }
+
+.char {
+    display: inline-block;
+    will-change: transform;
+}
+
+.split {
+    overflow: hidden;
+}

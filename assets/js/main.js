@@ -1,4 +1,12 @@
+// --------------------------------------------------
+// GSAP PLUGINS
+// --------------------------------------------------
+
 gsap.registerPlugin(ScrollTrigger, SplitText);
+
+// --------------------------------------------------
+// DOM REFERENCES
+// --------------------------------------------------
 
 const sections = [
     { el: document.querySelector(".hero"), name: "HERO" },
@@ -6,25 +14,54 @@ const sections = [
     { el: document.querySelector(".work"), name: "WORK" },
 ];
 
-let current = 0;
+const progressBar = document.querySelector(".progress");
+const percentText = document.querySelector(".scroll-percent");
+const sectionText = document.querySelector(".scroll-section");
 
-function smoothPercent(target) {
+// --------------------------------------------------
+// LENIS
+// --------------------------------------------------
+
+const lenis = new Lenis({
+    duration: 1.4,
+    smoothWheel: true,
+});
+
+function raf(time) {
+    lenis.raf(time);
+    requestAnimationFrame(raf);
+}
+
+requestAnimationFrame(raf);
+
+gsap.ticker.add((time) => {
+    lenis.raf(time * 1000);
+});
+
+gsap.ticker.lagSmoothing(0);
+
+// --------------------------------------------------
+// SCROLL BADGE
+// --------------------------------------------------
+
+let currentPercent = 0;
+let activeSection = "";
+
+function animatePercent(target) {
     gsap.to(
-        { val: current },
+        { value: currentPercent },
         {
-            val: target,
+            value: target,
             duration: 0.4,
             ease: "power2.out",
-            onUpdate: function () {
-                current = this.targets()[0].val;
 
-                document.querySelector(".scroll-percent").textContent = Math.round(current) + "%";
+            onUpdate() {
+                currentPercent = this.targets()[0].value;
+                percentText.textContent = Math.round(currentPercent) + "%";
             },
         }
     );
 }
-
-let lastSection = "";
 
 function updateSectionLabel() {
     let current = "HERO";
@@ -39,85 +76,83 @@ function updateSectionLabel() {
         }
     });
 
-    if (current !== lastSection) {
-        lastSection = current;
+    if (current === activeSection) return;
 
-        gsap.to(".scroll-section", {
-            opacity: 0,
-            y: -5,
-            duration: 0.2,
-            onComplete: () => {
-                document.querySelector(".scroll-section").textContent = current;
+    activeSection = current;
 
-                gsap.to(".scroll-section", {
-                    opacity: 1,
-                    y: 0,
-                    duration: 0.3,
-                });
-            },
-        });
-    }
+    gsap.to(sectionText, {
+        opacity: 0,
+        y: -5,
+        duration: 0.2,
+
+        onComplete() {
+            sectionText.textContent = current;
+
+            gsap.to(sectionText, {
+                opacity: 1,
+                y: 0,
+                duration: 0.3,
+            });
+        },
+    });
 }
 
-const lenis = new Lenis({
-    duration: 1.4,
-    smoothWheel: true,
-});
-
-function raf(time) {
-    lenis.raf(time);
-    requestAnimationFrame(raf);
-}
-
-requestAnimationFrame(raf);
-
-lenis.on("scroll", () => {
+lenis.on("scroll", ({ scroll }) => {
     ScrollTrigger.update();
+
     updateSectionLabel();
 
-    const scrollTop = window.scrollY;
     const docHeight = document.documentElement.scrollHeight - window.innerHeight;
 
-    const progress = (scrollTop / docHeight) * 100;
+    const progress = (scroll / docHeight) * 100;
 
-    smoothPercent(progress);
+    animatePercent(progress);
+
+    gsap.to(progressBar, {
+        width: `${progress}%`,
+        overwrite: true,
+    });
 });
 
-gsap.ticker.add((time) => {
-    lenis.raf(time * 1000);
-});
+// --------------------------------------------------
+// HERO INTRO
+// --------------------------------------------------
 
-gsap.ticker.lagSmoothing(0);
-
-const splitHero = new SplitText(".hero .split", {
+const heroSplit = new SplitText(".hero .split", {
     type: "chars,words",
     charsClass: "char",
     wordsClass: "word",
 });
 
-const tl = gsap.timeline();
+const introTl = gsap.timeline();
 
-tl.from(".logo", {
-    y: 40,
-    opacity: 0,
-    duration: 1,
-}).from(
-    ".hero p",
-    {
+introTl
+    .from(".logo", {
         y: 40,
         opacity: 0,
         duration: 1,
-    },
-    "-=0.8"
-);
+    })
+    .from(
+        ".hero p",
+        {
+            y: 40,
+            opacity: 0,
+            duration: 1,
+        },
+        "-=0.8"
+    );
 
-gsap.from(splitHero.chars, {
+gsap.from(heroSplit.chars, {
     yPercent: 120,
     opacity: 0,
     stagger: 0.02,
     duration: 1.2,
     ease: "power4.out",
 });
+
+// --------------------------------------------------
+// HERO PARALLAX
+// --------------------------------------------------
 
 gsap.to(".hero-content", {
     y: -150,
@@ -143,10 +178,51 @@ gsap.to(".hero", {
     },
 });
 
-gsap.from(".reveal", {
+// --------------------------------------------------
+// SPLIT TEXT REVEALS
+// --------------------------------------------------
+
+document.querySelectorAll(".about .split, .work .split").forEach((element) => {
+    const split = new SplitText(element, {
+        type: "chars",
+        charsClass: "char",
+    });
+
+    gsap.set(split.chars, {
+        yPercent: 120,
+        opacity: 0,
+    });
+
+    ScrollTrigger.create({
+        trigger: element,
+        start: "top 80%",
+
+        onEnter() {
+            gsap.to(split.chars, {
+                yPercent: 0,
+                opacity: 1,
+                stagger: 0.015,
+                duration: 1,
+                ease: "power4.out",
+            });
+        },
+
+        onLeaveBack() {
+            gsap.set(split.chars, {
+                yPercent: 120,
+                opacity: 0,
+            });
+        },
+    });
+});
+
+// --------------------------------------------------
+// TEXT REVEALS
+// --------------------------------------------------
+
+gsap.from(".about .reveal", {
     y: 120,
     opacity: 0,
-    stagger: 0.2,
     duration: 1.4,
 
     scrollTrigger: {
@@ -166,6 +242,7 @@ gsap.fromTo(
         opacity: 1,
         duration: 1.2,
         ease: "power3.out",
+
         scrollTrigger: {
             trigger: ".work",
             start: "top 80%",
@@ -174,8 +251,13 @@ gsap.fromTo(
     }
 );
 
+// --------------------------------------------------
+// WORK PARALLAX
+// --------------------------------------------------
+
 gsap.to(".work-inner", {
     y: -80,
+
     scrollTrigger: {
         trigger: ".work",
         start: "top bottom",
@@ -183,6 +265,10 @@ gsap.to(".work-inner", {
         scrub: true,
     },
 });
+
+// --------------------------------------------------
+// FLOATING SCROLL BADGE
+// --------------------------------------------------
 
 gsap.to(".scroll-badge", {
     y: -10,
@@ -192,58 +278,19 @@ gsap.to(".scroll-badge", {
     ease: "sine.inOut",
 });
 
-document.querySelectorAll(".about").forEach((section) => {
-    const split = new SplitText(section.querySelector(".split"), {
-        type: "chars",
-    });
+// --------------------------------------------------
+// MAGNETIC ELEMENTS
+// --------------------------------------------------
 
-    ScrollTrigger.create({
-        trigger: section,
-        start: "top 75%",
+document.querySelectorAll(".magnetic").forEach((element) => {
+    element.addEventListener("mousemove", (event) => {
+        const rect = element.getBoundingClientRect();
 
-        onEnter: () => {
-            gsap.from(split.chars, {
-                yPercent: 120,
-                opacity: 0,
-                stagger: 0.015,
-                duration: 1,
-                ease: "power4.out",
-            });
-        },
+        const x = event.clientX - rect.left - rect.width / 2;
 
-        onEnterBack: () => {
-            gsap.from(split.chars, {
-                yPercent: 120,
-                opacity: 0,
-                stagger: 0.015,
-                duration: 1,
-                ease: "power4.out",
-            });
-        },
-    });
-});
+        const y = event.clientY - rect.top - rect.height / 2;
 
-window.addEventListener("scroll", () => {
-    const height = document.documentElement.scrollHeight - window.innerHeight;
-
-    const progress = (window.scrollY / height) * 100;
-
-    gsap.to(".progress", {
-        width: progress + "%",
-    });
-});
-
-//magnetic
-const magneticElements = document.querySelectorAll(".magnetic");
-
-magneticElements.forEach((el) => {
-    el.addEventListener("mousemove", (e) => {
-        const rect = el.getBoundingClientRect();
-
-        const x = e.clientX - rect.left - rect.width / 2;
-        const y = e.clientY - rect.top - rect.height / 2;
-
-        gsap.to(el, {
+        gsap.to(element, {
             x: x * 0.25,
             y: y * 0.25,
             duration: 0.4,
@@ -251,8 +298,8 @@ magneticElements.forEach((el) => {
         });
     });
 
-    el.addEventListener("mouseleave", () => {
-        gsap.to(el, {
+    element.addEventListener("mouseleave", () => {
+        gsap.to(element, {
             x: 0,
             y: 0,
             duration: 0.6,
