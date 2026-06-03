@@ -8,12 +8,12 @@ Motion, interaction and storytelling.
 ///
 
 
-Beautiful interfaces start with thoughtful interactions
+Beautiful interfaces start as thoughtful interactions
 
 We create experiences that feel alive.
 
 ///
 
-We design motion that reacts to you
+We design motions that reacts to you
 
 Scroll, hover, and interact — everything responds.

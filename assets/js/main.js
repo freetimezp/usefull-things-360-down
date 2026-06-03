@@ -188,32 +188,25 @@ document.querySelectorAll(".about .split, .work .split").forEach((element) => {
         charsClass: "char",
     });
 
-    gsap.set(split.chars, {
-        yPercent: 120,
-        opacity: 0,
-    });
-
-    ScrollTrigger.create({
-        trigger: element,
-        start: "top 80%",
-
-        onEnter() {
-            gsap.to(split.chars, {
-                yPercent: 0,
-                opacity: 1,
-                stagger: 0.015,
-                duration: 1,
-                ease: "power4.out",
-            });
+    gsap.fromTo(
+        split.chars,
+        {
+            yPercent: 120,
+            opacity: 0,
         },
+        {
+            yPercent: 0,
+            opacity: 1,
+            stagger: 0.02,
 
-        onLeaveBack() {
-            gsap.set(split.chars, {
-                yPercent: 120,
-                opacity: 0,
-            });
-        },
-    });
+            scrollTrigger: {
+                trigger: element,
+                start: "top 85%",
+                end: "top 45%",
+                scrub: 1,
+            },
+        }
+    );
 });
 
 // --------------------------------------------------

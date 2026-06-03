@@ -374,6 +374,11 @@ h1 {
     transition: 0.4s ease;
 }
 
+.word {
+    display: inline-block;
+    white-space: nowrap;
+}
+
 .char {
     display: inline-block;
     will-change: transform;
